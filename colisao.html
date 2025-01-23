@@ -1,0 +1,164 @@
+<html>
+<head>
+    <style>
+        #canvas{
+            border: 1px solid black !important;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" width="1000" height="600"></canvas>
+
+    <script>
+var canvas = document.getElementById("canvas");
+var ctx = canvas.getContext("2d");
+var atrito=1;
+var g=0.04;
+var aux;
+
+function Bola(x, y, vx, vy,massa) {
+    return {
+        x: x,
+        y: y,
+        vx: vx,
+        vy: vy,
+        massa: massa,
+        raio: Math.sqrt(massa)*15,
+        cor: "black",
+
+        mover: function() {
+            this.x += this.vx;
+            this.y += this.vy;
+
+            if(this.x + this.raio > canvas.width) {
+                this.x = canvas.width - this.raio;
+                this.vx = -Math.abs(this.vx)*atrito;
+                this.vy *=atrito;
+            } else if(this.x - this.raio < 0) {
+                this.x = this.raio;
+                this.vx = Math.abs(this.vx)*atrito;
+                this.vy *=atrito;
+            }
+
+            if(this.y + this.raio > canvas.height) {
+                this.y = canvas.height - this.raio;
+                this.vy = -Math.abs(this.vy)*atrito;
+                this.vx *=atrito;
+            } else if(this.y - this.raio < 0) {
+                this.y = this.raio;
+                this.vy = (Math.abs(this.vy)*atrito);
+                this.vx *=atrito;
+            } else {
+                this.vy+=g;
+            }
+        },
+
+        colide: function(bola) {
+            var dx = bola.x - this.x;
+            var dy = bola.y - this.y;
+            var dist = Math.sqrt(dx*dx + dy*dy);
+
+            //Distancia menor que a soma dos raios, houve colisao
+            if(dist <= this.raio + bola.raio) {
+                var sen = dy / dist;
+                var cos = dx / dist;
+                var diff=(this.raio+bola.raio-dist)/2;
+                bola.x+=diff*cos;
+                bola.y+=diff*sen;
+                this.x-=diff*cos;
+                this.y-=diff*sen;
+
+                
+                var vn=this.vx*cos+this.vy*sen;
+                var vnx=vn*cos;
+                var vny=vn*sen;
+                //var vp=-this.vx*sen+this.vy*cos;
+
+                var vnbola=bola.vx*cos+bola.vy*sen;
+                var vnxbola=vnbola*cos;
+                var vnybola=vnbola*sen;
+                //var vpb=-bola.vx*sen+bola.vy*cos;
+
+                var somamassa= this.massa + bola.massa;
+                var vnfx=((this.massa-bola.massa)*vnx/somamassa)+ 2*bola.massa*vnxbola/somamassa;
+                var vnfxbola=((bola.massa-this.massa)*vnxbola/somamassa)+ 2*this.massa*vnx/somamassa;
+                var vnfy=((this.massa-bola.massa)*vny/somamassa)+ 2*bola.massa*vnybola/somamassa;
+                var vnfybola=((bola.massa-this.massa)*vnybola/somamassa)+ 2*this.massa*vny/somamassa;
+
+                this.vx=this.vx-vnx+vnfx;
+                this.vy=this.vy-vny+vnfy;
+
+                bola.vx=bola.vx-vnxbola+vnfxbola;
+                bola.vy=bola.vy-vnybola+vnfybola;
+
+            }
+        },
+
+        desenha: function () {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.raio, 0, Math.PI * 2, true);
+            ctx.closePath();
+            ctx.fillStyle = this.cor;
+            ctx.stroke();
+        },
+    };
+}
+
+var bolas = [];
+
+
+bolas.push(Bola(100, 200, 0, 2,1));
+/*
+bolas.push(Bola(200, 200, 1, 0,20));
+
+
+bolas.push(Bola(120, 100, 5, 0,3));
+bolas.push(Bola(220, 100, 5, 0,4));
+bolas.push(Bola(330, 100, 5, 0,6));
+bolas.push(Bola(440, 100, 5, 0,9));
+bolas.push(Bola(550, 100, 5, 0,5));
+bolas.push(Bola(660, 100, 5, 0,11));
+
+bolas.push(Bola(110, 400, 5, 0,14));
+bolas.push(Bola(220, 400, 5, 0,5));
+bolas.push(Bola(330, 400, 5, 0,5));
+bolas.push(Bola(440, 400, 5, 0,8));
+bolas.push(Bola(550, 400, 5, 0,9));
+bolas.push(Bola(660, 400, 5, 0,7));
+
+bolas.push(Bola(100, 200, 5, 0,4));
+bolas.push(Bola(200, 200, 5, 0,7));
+bolas.push(Bola(400, 200, 0, 0,3));
+bolas.push(Bola(500, 200, 0, 0,8));
+bolas.push(Bola(600, 200, 0, 0,7));
+bolas.push(Bola(700, 200, 0, 0,11));
+*/
+
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    //Mover todas as bolas
+    for(var i=0 ; i<bolas.length ; i++) {
+        bolas[i].mover();
+    }
+
+    for(var i=0 ; i<bolas.length ; i++) {
+        for(var j=i+1 ; j<bolas.length ; j++) {
+            bolas[i].colide(bolas[j]);
+        }
+    }
+
+    //Desenhar todas as bolas
+    for(var i=0 ; i<bolas.length ; i++) {
+        bolas[i].desenha();
+    }
+
+    setTimeout(function(){window.requestAnimationFrame(draw);},1);
+    //window.requestAnimationFrame(draw);
+}
+
+draw();
+    </script>
+</body>
+</html>
